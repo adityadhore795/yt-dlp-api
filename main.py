@@ -34,7 +34,6 @@ def download_short():
         result = yt_dl.extract_info(YOUTUBE_CHANNEL_URL, download=False)
         entries = result.get('entries', [])
 
-    # === FIND AN UNSEEN VIDEO ===
     for entry in entries:
         video_id = entry['id']
         if video_id in uploaded_ids:
@@ -43,18 +42,17 @@ def download_short():
         video_url = entry['url']
         print("✅ Found new video:", video_url)
 
-        # === DOWNLOAD VIDEO ===
+        # === DOWNLOAD VIDEO with PROXY ===
         ydl_opts_download = {
             'format': 'best[ext=mp4]/best',
             'outtmpl': 'latest_short.%(ext)s',
-            'cookies': COOKIES_FILE
-            'proxy': 'https://us.proxymesh.com:31280'  # Try this one
+            'cookies': COOKIES_FILE,
+            'proxy': 'https://us.proxymesh.com:31280'  # ✅ FREE PROXY
         }
 
         with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
             info = ydl.extract_info(video_url, download=True)
 
-        # === MARK AS DOWNLOADED ===
         save_uploaded_id(video_id)
 
         return {
