@@ -1,13 +1,13 @@
-from fastapi import FastAPI, Response
-from fastapi.responses import FileResponse
+from fastapi import FastAPI
 import yt_dlp
 import os
 
 app = FastAPI()
 
+# === CONFIG ===
 YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@Knot_Master/shorts"
 UPLOADED_IDS_FILE = "uploaded_ids.txt"
-COOKIES_FILE = "cookies.txt"  # Optional for private videos
+COOKIES_FILE = "cookies.txt"
 
 def get_uploaded_ids():
     if not os.path.exists(UPLOADED_IDS_FILE):
@@ -23,28 +23,37 @@ def save_uploaded_id(video_id):
 def download_short():
     uploaded_ids = get_uploaded_ids()
 
-    # Step 1: Get list of videos
-    ydl_opts = {'quiet': True, 'extract_flat': True}
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        result = ydl.extract_info(YOUTUBE_CHANNEL_URL, download=False)
-        entries = result['entries']
+    # === GET VIDEO LIST FROM CHANNEL ===
+    ydl_opts = {
+        'quiet': True,
+        'extract_flat': True,
+        'force_generic_extractor': False
+    }
 
+    with yt_dlp.YoutubeDL(ydl_opts) as yt_dl:
+        result = yt_dl.extract_info(YOUTUBE_CHANNEL_URL, download=False)
+        entries = result.get('entries', [])
+
+    # === FIND AN UNSEEN VIDEO ===
     for entry in entries:
         video_id = entry['id']
         if video_id in uploaded_ids:
             continue
 
         video_url = entry['url']
-        print("Downloading:", video_url)
+        print("✅ Found new video:", video_url)
 
-        # Step 2: Download video
+        # === DOWNLOAD VIDEO ===
         ydl_opts_download = {
             'format': 'best[ext=mp4]/best',
             'outtmpl': 'latest_short.%(ext)s',
+            'cookies': COOKIES_FILE
         }
+
         with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
             info = ydl.extract_info(video_url, download=True)
 
+        # === MARK AS DOWNLOADED ===
         save_uploaded_id(video_id)
 
         return {
@@ -55,3 +64,4 @@ def download_short():
         }
 
     return {"message": "No new video found."}
+
