@@ -48,6 +48,7 @@ def download_short():
             'format': 'best[ext=mp4]/best',
             'outtmpl': 'latest_short.%(ext)s',
             'cookies': COOKIES_FILE
+            'proxy': 'https://us.proxymesh.com:31280'  # Try this one
         }
 
         with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
